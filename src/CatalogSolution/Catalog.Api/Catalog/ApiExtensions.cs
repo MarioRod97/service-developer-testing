@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
+﻿using Marten;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace Catalog.Api.Catalog;
 
@@ -9,13 +10,33 @@ public static class ApiExtensions
         var group = routes.MapGroup("/catalg");
 
         group.MapPost("/{vendor}/{application}", AddItemAsync);
+        group.MapGet("/{vendor}/{application}/{version}", GetItemAsync);
 
         return routes;
+    }
+
+    public static async Task<Ok<CatalogItemResponse>> GetItemAsync(string vendor,
+        string application, string version, IDocumentSession session)
+    {
+        var entity = await session.Query<CatalogItemEntity>()
+            .Where(c => c.Vendor == vendor && c.Application == application && c.Version == version)
+            .SingleOrDefaultAsync();
+
+        var response = new CatalogItemResponse
+        {
+            Vendor = entity.Vendor,
+            Application = entity.Application,
+            Version = entity.Version,
+            AnnualCostPerSeat = entity.AnnualCostPerSeat
+        };
+
+        return TypedResults.Ok(response);
     }
 
     public static async Task<Created<CatalogItemResponse>> AddItemAsync(CreateCatalogItemRequest request,
         string vendor,
         string application,
+        IDocumentSession session,
         CancellationToken token)
     {
         var response = new CatalogItemResponse()
@@ -25,6 +46,20 @@ public static class ApiExtensions
             Vendor = vendor,
             Version = request.Version
         };
+
+        // Save it to the database
+        var entity = new CatalogItemEntity
+        {
+            Id = Guid.NewGuid(),
+            Vendor = response.Vendor,
+            Application = application,
+            Version = response.Version,
+            AnnualCostPerSeat = response.AnnualCostPerSeat,
+            IsCommercial = request.IsCommercial
+        };
+
+        session.Store(entity);
+        await session.SaveChangesAsync();
 
         return TypedResults.Created("slime", response);
     }
