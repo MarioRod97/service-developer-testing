@@ -10,12 +10,13 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var connectionString = builder.Configuration.GetConnectionString("data")
-    ?? throw new Exception("Couldn't find connection string in environment. Bailing.");
+    ?? throw new Exception("Couldn't find connection string in environment. Bailing");
 
 builder.Services.AddMarten(config =>
 {
     config.Connection(connectionString);
 }).UseLightweightSessions();
+
 
 var app = builder.Build();
 
@@ -31,7 +32,6 @@ if (await app.Services.GetRequiredService<IFeatureManager>().IsEnabledAsync("Cat
 {
     app.MapCatalog();
 }
-
 app.Run();
 
-public partial class Program();
+public partial class Program { }

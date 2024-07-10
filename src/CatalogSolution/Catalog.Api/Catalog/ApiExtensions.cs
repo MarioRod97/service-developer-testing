@@ -7,20 +7,30 @@ public static class ApiExtensions
 {
     public static IEndpointRouteBuilder MapCatalog(this IEndpointRouteBuilder routes)
     {
-        var group = routes.MapGroup("/catalg");
+        var group = routes.MapGroup("/catalog/");
 
         group.MapPost("/{vendor}/{application}", AddItemAsync);
+
         group.MapGet("/{vendor}/{application}/{version}", GetItemAsync);
 
         return routes;
     }
 
-    public static async Task<Ok<CatalogItemResponse>> GetItemAsync(string vendor,
-        string application, string version, IDocumentSession session)
+    public static async Task<Results<Ok<CatalogItemResponse>, NotFound>> GetItemAsync(string vendor,
+        string application, string version, IDocumentSession session,
+        INormalizeUrlSegments segmentNormalizer)
     {
+        var normalizedApplication = segmentNormalizer.Normalize(application);
+
         var entity = await session.Query<CatalogItemEntity>()
             .Where(c => c.Vendor == vendor && c.Application == application && c.Version == version)
             .SingleOrDefaultAsync();
+        // if the entity is null, return a 404.
+
+        if (entity is null)
+        {
+            return TypedResults.NotFound();
+        }
 
         var response = new CatalogItemResponse
         {
@@ -33,18 +43,20 @@ public static class ApiExtensions
         return TypedResults.Ok(response);
     }
 
-    public static async Task<Created<CatalogItemResponse>> AddItemAsync(CreateCatalogItemRequest request,
+    public static async Task<Created<CatalogItemResponse>> AddItemAsync(
+        CreateCatalogItemRequest request,
         string vendor,
         string application,
         IDocumentSession session,
         CancellationToken token)
+
     {
         var response = new CatalogItemResponse()
         {
             AnnualCostPerSeat = request.AnnualCostPerSeat,
             Application = application,
             Vendor = vendor,
-            Version = request.Version
+            Version = request.Version,
         };
 
         // Save it to the database
@@ -55,13 +67,13 @@ public static class ApiExtensions
             Application = application,
             Version = response.Version,
             AnnualCostPerSeat = response.AnnualCostPerSeat,
-            IsCommercial = request.IsCommercial
+            IsCommercial = request.IsCommercial,
         };
 
         session.Store(entity);
         await session.SaveChangesAsync();
 
-        return TypedResults.Created("slime", response);
+        return TypedResults.Created($"/catalog/{vendor}/{application}/{entity.Version}", response);
     }
 }
 
@@ -74,7 +86,6 @@ public record CreateCatalogItemRequest
 
 public record CatalogItemResponse
 {
-
     public string Vendor { get; set; } = string.Empty;
     public string Application { get; set; } = string.Empty;
     public string Version { get; set; } = string.Empty;

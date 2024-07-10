@@ -1,17 +1,21 @@
 ﻿using Alba;
 using Catalog.Api.Catalog;
 
+
 namespace Catalog.Tests.Catalog;
-
-public class AddingToTheCatalog
-
+public class AddingToTheCatalog : IClassFixture<CatalogFixture>
 {
+
+    private IAlbaHost _host;
+    public AddingToTheCatalog(CatalogFixture fixture)
+    {
+        _host = fixture.Host;
+    }
+
 
     [Fact]
     public async Task DoIt()
     {
-        using var host = await AlbaHost.For<global::Program>();
-
         var newCatalogItem = new CreateCatalogItemRequest
         {
             Version = "1.91",
@@ -22,33 +26,44 @@ public class AddingToTheCatalog
         var expectedResponse = new CatalogItemResponse
         {
             Vendor = "microsoft",
-            Application = "vscode",
+            Application = "visualstudio",
             AnnualCostPerSeat = 2.99M,
             Version = "1.91"
         };
 
-        var postResponse = await host.Scenario(api =>
+        var postResponse = await _host.Scenario(api =>
         {
-            api.Post.Json(newCatalogItem).ToUrl("/catalog/microsoft/vscode");
+            api.Post.Json(newCatalogItem).ToUrl("/catalog/microsoft/visualstudio");
             api.StatusCodeShouldBe(201);
         });
+
+        var locationHeader = postResponse.Context.Response.Headers["location"].Single();
+
+        Assert.NotNull(locationHeader);
 
         var postBody = await postResponse.ReadAsJsonAsync<CatalogItemResponse>();
 
         Assert.NotNull(postBody);
         Assert.Equal(expectedResponse, postBody);
 
-        var getResponse = await host.Scenario(api =>
+        var getResponse = await _host.Scenario(api =>
         {
-
-            api.Get.Url("/catalog/microsoft/vscode/1.91");
-
+            api.Get.Url(locationHeader);
             api.StatusCodeShouldBeOk();
-
         });
 
         var getBody = await getResponse.ReadAsJsonAsync<CatalogItemResponse>();
 
         Assert.Equal(postBody, getBody);
+    }
+
+    [Fact]
+    public async Task GettingAnItemThatIsntInTheCatalog()
+    {
+        await _host.Scenario(api =>
+        {
+            api.Get.Url("/catalog/microsoft/vscode/1.17");
+            api.StatusCodeShouldBe(404);
+        });
     }
 }
