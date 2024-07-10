@@ -1,0 +1,13 @@
+build:
+
+catalog-unit:
+    cd Catalog.Tests && dotnet test JUST THE UNIT TESTS
+
+catalog-system-tests: 
+    cd Catalog.Tests && dotnet test JUST THE SYSTEM TESTS
+
+catalog-filtered:
+    cd Catalog.Tests && dotnet test JUST SOME I WANT
+
+all:
+    run both unit and system tests
