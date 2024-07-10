@@ -1,4 +1,5 @@
-﻿using Marten;
+﻿using FluentValidation;
+using Marten;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace Catalog.Api.Catalog;
@@ -8,23 +9,29 @@ public static class ApiExtensions
     public static IEndpointRouteBuilder MapCatalog(this IEndpointRouteBuilder routes)
     {
         var group = routes.MapGroup("/catalog/");
-
         group.MapPost("/{vendor}/{application}", AddItemAsync);
-
-        group.MapGet("/{vendor}/{application}/{version}", GetItemAsync);
+        group.MapGet("/{vendor:regex(^[a-zA-Z]+$)}/{application}/{version}", GetItemAsync);
 
         return routes;
     }
 
     public static async Task<Results<Ok<CatalogItemResponse>, NotFound>> GetItemAsync(string vendor,
         string application, string version, IDocumentSession session,
-        INormalizeUrlSegments segmentNormalizer)
+        INormalizeUrlSegmentsForTheCatalog slugger)
     {
-        var normalizedApplication = segmentNormalizer.Normalize(application);
+        var slugs = slugger.NormalizeForCatalog(vendor, application, version);
 
+        // Write the Code You Wish You Had
+        var locationSlug = slugs.GetLocationSlug();
+
+        // this will get better in a second
+        //var entity = await session.Query<CatalogItemEntity>()
+        //    .Where(c => c.Vendor == slugs.NormalizedVendor
+        //    && c.Application == slugs.NormalizedApplication &&
+        //    c.Version == slugs.NormalizedVersion)
+        //    .SingleOrDefaultAsync();
         var entity = await session.Query<CatalogItemEntity>()
-            .Where(c => c.Vendor == vendor && c.Application == application && c.Version == version)
-            .SingleOrDefaultAsync();
+            .Where(c => c.Slug == locationSlug).SingleOrDefaultAsync();
         // if the entity is null, return a 404.
 
         if (entity is null)
@@ -43,23 +50,49 @@ public static class ApiExtensions
         return TypedResults.Ok(response);
     }
 
-    public static async Task<Created<CatalogItemResponse>> AddItemAsync(
+    public static async Task<Results<Created<CatalogItemResponse>,
+        BadRequest<IDictionary<string, string[]>>>>
+        AddItemAsync(
         CreateCatalogItemRequest request,
         string vendor,
         string application,
+        INormalizeUrlSegmentsForTheCatalog slugger,
         IDocumentSession session,
-        CancellationToken token)
+        CancellationToken token,
+        IValidator<CreateCatalogItemRequest> validator)
 
     {
+        //TODO: 2.Validating
+        //TODO: 3. How To Test This?
+        var validations = await validator.ValidateAsync(request);
+
+        if (!validations.IsValid)
+        {
+            return TypedResults.BadRequest(validations.ToDictionary());
+        }
+
+        var slugs = slugger.NormalizeForCatalog(vendor, application, request.Version);
+
         var response = new CatalogItemResponse()
         {
             AnnualCostPerSeat = request.AnnualCostPerSeat,
-            Application = application,
-            Vendor = vendor,
-            Version = request.Version,
+            Application = slugs.NormalizedApplication,
+            Vendor = slugs.NormalizedVendor,
+            Version = slugs.NormalizedVersion
+
         };
 
+        // If it isn't free, then check the budget to see if we have enough money,
+        // if we don't, return a 400 with an explanation.
+        if (request.IsCommercial && request.AnnualCostPerSeat > 0)
+        {
+            // Call another API, and ask if we have enough money.
+            // If it says yes, cool,
+            // if not, return a 400 saying we can't afford this.
+        }
+
         // Save it to the database
+        var locationSlug = slugs.GetLocationSlug();
         var entity = new CatalogItemEntity
         {
             Id = Guid.NewGuid(),
@@ -68,12 +101,13 @@ public static class ApiExtensions
             Version = response.Version,
             AnnualCostPerSeat = response.AnnualCostPerSeat,
             IsCommercial = request.IsCommercial,
+            Slug = locationSlug
         };
 
         session.Store(entity);
         await session.SaveChangesAsync();
 
-        return TypedResults.Created($"/catalog/{vendor}/{application}/{entity.Version}", response);
+        return TypedResults.Created(locationSlug, response);
     }
 }
 

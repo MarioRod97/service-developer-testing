@@ -1,6 +1,10 @@
 ﻿namespace Catalog.Api.Catalog;
 
-public interface INormalizeUrlSegments
+public interface INormalizeUrlSegmentsForTheCatalog
 {
-    public string Normalize(string segment);
+    public NormalizationResults NormalizeForCatalog(string vendor, string application, string version);
 }
+
+public record NormalizationResults(
+    string NormalizedVendor, string NormalizedApplication,
+    string NormalizedVersion);

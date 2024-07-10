@@ -1,8 +1,8 @@
 ﻿using Alba;
 using Catalog.Api.Catalog;
 
-
 namespace Catalog.Tests.Catalog;
+
 public class AddingToTheCatalog : IClassFixture<CatalogFixture>
 {
 
@@ -11,7 +11,6 @@ public class AddingToTheCatalog : IClassFixture<CatalogFixture>
     {
         _host = fixture.Host;
     }
-
 
     [Fact]
     public async Task DoIt()
@@ -28,7 +27,7 @@ public class AddingToTheCatalog : IClassFixture<CatalogFixture>
             Vendor = "microsoft",
             Application = "visualstudio",
             AnnualCostPerSeat = 2.99M,
-            Version = "1.91"
+            Version = "1-91"
         };
 
         var postResponse = await _host.Scenario(api =>
