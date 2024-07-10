@@ -7,9 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Catalog.Api", "Catalog.Api\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Catalog.Tests", "Catalog.Tests\Catalog.Tests.csproj", "{A5FC7267-56D1-4B95-9AC5-470C8BCAFDFC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SystemIntegrationTests", "SystemIntegrationTests\SystemIntegrationTests.csproj", "{77D7FC44-7B9F-422A-943D-DF3D11B676F6}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Budget.Api", "Budget.Api\Budget.Api.csproj", "{41CFC169-B9AC-4FA6-A258-D327153356BD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Budget.Api", "Budget.Api\Budget.Api.csproj", "{41CFC169-B9AC-4FA6-A258-D327153356BD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,10 +23,6 @@ Global
 		{A5FC7267-56D1-4B95-9AC5-470C8BCAFDFC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A5FC7267-56D1-4B95-9AC5-470C8BCAFDFC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A5FC7267-56D1-4B95-9AC5-470C8BCAFDFC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{77D7FC44-7B9F-422A-943D-DF3D11B676F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{77D7FC44-7B9F-422A-943D-DF3D11B676F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{77D7FC44-7B9F-422A-943D-DF3D11B676F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{77D7FC44-7B9F-422A-943D-DF3D11B676F6}.Release|Any CPU.Build.0 = Release|Any CPU
 		{41CFC169-B9AC-4FA6-A258-D327153356BD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{41CFC169-B9AC-4FA6-A258-D327153356BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{41CFC169-B9AC-4FA6-A258-D327153356BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
